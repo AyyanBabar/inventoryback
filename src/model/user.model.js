@@ -24,6 +24,12 @@ const  UserSchema = mongoose.Schema({
         type: Boolean,
         required: true,
         default: false
+    },
+    token: {
+        type: String
+    },
+    tokenExpiration: {
+        type: String
     }
 })  
 

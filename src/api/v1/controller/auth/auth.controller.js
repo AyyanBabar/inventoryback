@@ -1,13 +1,15 @@
 const User = require('../../../../model/user.model');
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
+const jwt = require('jsonwebtoken')
+const jwtSecret = require('../../../../config/jwtConfig/jwtconfig')
 const auth = {}
 
 
 auth.register = async (req, res) => {
     try {
         const errors = validationResult(req)
-        if (!errors.isEmpty) {
+        if (!errors.isEmpty()) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
         }
         const existingUser = await User.findOne({ email: req.body.email })
@@ -25,8 +27,23 @@ auth.register = async (req, res) => {
 }
 
 auth.login = async (req, res)=>{
-    
+    try{
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+        }
+        const findUser = await User.findOne({ email: req.body.email })
+         
+        if (!findUser ||req.body.password!==findUser.password ) {
+            return ApiResponse(res, 400, { status: false, msg: 'Invalid credentials', data: null })
+        }
+        const payload = {_id: findUser._id, name: findUser.name, role: findUser.role, isVerified:  findUser.isVerified, email: findUser.email}
+        const token = jwt?.sign(payload, jwtSecret.secret, {expiresIn: jwtSecret.expiresIn} )
+        return   ApiResponse(res, 200, { status: true, msg: 'User succesfully login', data: findUser, token })
+    }catch (err) {
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+    }
 }
-
+//aa
 
 module.exports = auth
