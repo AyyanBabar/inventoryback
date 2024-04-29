@@ -17,5 +17,5 @@ app.use('/api/vi', mainRouter)
 connectDB()
 
 //commitda
-
+app.get('/', (req,res)=>{res.send('succesful git')})
 app.listen(PORT, ()=>{console.log('port is listening on port', PORT)})
