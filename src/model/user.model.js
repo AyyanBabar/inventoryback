@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const role = require('../config/roles/roles')
 
 const  UserSchema = mongoose.Schema({
     name: {
@@ -16,8 +17,13 @@ const  UserSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum : ['user', 'admin'],
-        default: 'user'
+        enum : [role.user, role.admin],
+        default: role.user
+    },
+    isVerified: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 })  
 

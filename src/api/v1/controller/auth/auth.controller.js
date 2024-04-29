@@ -17,7 +17,7 @@ auth.register = async (req, res) => {
         }
         const newUser = await User.create(req.body);
         const { password, ...rest } = newUser._doc
-        return ApiResponse(res, 200, { status: true, msg: 'User created Succesfully', data: rest })
+        return ApiResponse(res, 200, { status: true, msg: 'User created Succesfully and verification email has been sent', data: rest })
     } catch (err) {
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
