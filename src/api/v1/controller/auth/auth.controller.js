@@ -44,6 +44,5 @@ auth.login = async (req, res)=>{
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
 }
-//aa
 
 module.exports = auth
