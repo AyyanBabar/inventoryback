@@ -1,4 +1,4 @@
-const User = require('../../../../model/user.model');
+const User = require('../../../../model/index').user;
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
 const jwt = require('jsonwebtoken')
@@ -43,6 +43,10 @@ auth.login = async (req, res)=>{
     }catch (err) {
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
+}
+
+auth.profile = async (req, res)=>{
+    res.send('ho')
 }
 
 module.exports = auth

@@ -1,3 +1,4 @@
 module.exports = {
-    userModule: require('./validations/auth.validation')
+    userValidation: require('./validations/auth.validation'),
+    companyValidation :  require('./validations/company.validation')
 }

@@ -8,6 +8,7 @@ function isAdmin(req, res, next){
             return ApiResponse(res, 401, {status: false, msg : 'unAuthorized', data: null})
         }
     }catch(err){
-
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
 }
+module.exports = isAdmin
