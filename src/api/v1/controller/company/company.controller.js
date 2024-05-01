@@ -59,7 +59,7 @@ companyController.findById = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        const company = await Company.findOne({ _id: req.params.id, userId: req.user._id })
+        const company = await Company.findOne({ _id: req.params.id, userId: req.user._id }) 
         if (!company) {
             return ApiResponse(res, 404, { status: false, msg: 'Company not found', data: null });
         } 
