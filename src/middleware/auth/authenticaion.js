@@ -13,6 +13,7 @@ function isAuthencticated(req, res, next) {
         if (!verify) {
             return ApiResponse(res, 401, { status: false, msg: 'Invalid token', data: null })
         }
+        console.log(verify)
         req.user = verify
         next()
     } catch (err) {
