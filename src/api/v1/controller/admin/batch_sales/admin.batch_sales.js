@@ -1,11 +1,11 @@
-const prodcutBatch = require('../../../../model/product_batches.model')
-const User = require('../../../../model/index').user
-const batchSales = require('../../../../model/index').batchSales
+const prodcutBatch = require('../../../../../model/product_batches.model')
+const User = require('../../../../../model/index').user
+const batchSales = require('../../../../../model/index').batchSales
 
-const Product = require('../../../../model/index').product
+const Product = require('../../../../../model/index').product
 const { ObjectId, MongoGridFSChunkError } = require('mongodb');
 const mongoose = require('mongoose')
-const ApiResponse = require('../../../../Response/api.resposne')
+const ApiResponse = require('../../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
 
 const batchSalesController = {}
@@ -26,15 +26,10 @@ batchSalesController.create = async (req, res) => {
         }
         const findProduct = await Product.findById(findProductBatch.productId)
 
-        if (!findProduct || findProduct.userId != req.user._id) {
+        if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'product not user found', data: null })
         }
-        if (req.body.soldQuantity > findProductBatch.remainingQuantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds remaining quantity', data: null })
-        }
-        if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'all items sold', data: null })
-        }
+
         const newBatchSalesData = {
             batchId: req.body.batchId,
             soldQuantity:  req.body.soldQuantity,
@@ -51,33 +46,23 @@ batchSalesController.create = async (req, res) => {
 
     }
 }
-batchSalesController.findByBatchId = async (req, res) => {
+
+batchSalesController.find = async (req, res) => {
     try {
-        // Ensure user exists
-        const findUser = await User.findById(req.user._id);
+        const findUser = await User.findById(req.user._id)
         if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null });
+            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        
-        const findBatchesSales = await batchSales.find({ batchId: req.params.id });
-
-        if (findBatchesSales.length === 0) {    
-            return ApiResponse(res, 404, { status: false, msg: 'Product batches not found', data: null });
+        const findProductBatch = await batchSales.find()
+        if (findProductBatch.length <= 0) {
+            return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this user', data: null })
         }
 
-        // Filter batches for authorized products
-        const authorizedBatches = findBatchesSales.filter(batch => batch.userId===req.params._id);
-
-        // If no authorized batches found, return error
-        if (authorizedBatches.length === 0) {
-            return ApiResponse(res, 404, { status: false, msg: 'No authorized batches found', data: null });
-        }
-
-        return ApiResponse(res, 200, { status: true, msg: 'Batches found', data: authorizedBatches });
-
+        return ApiResponse(res, 200, { status: true, msg: 'Product', data: findProductBatch })
     } catch (err) {
-        console.error(err);
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
+
+        console.log(err)
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
 }
 
@@ -101,7 +86,7 @@ batchSalesController.findById = async (req, res) => {
 
         const findProduct = await Product.findById(findProductBatch.productId)
 
-        if (!findProduct || req.user._id != findProduct.userId) {
+        if (!findProduct ) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
         }
 
@@ -118,12 +103,13 @@ batchSalesController.findById = async (req, res) => {
 
 batchSalesController.findByIdandUpdate = async (req, res) => {
     try {
-        if (!req.user) {
+        console.log(req.body)
+        if(!req.user) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null })
 
         }
         const errors = validationResult(req)
-        console.log(req.body)
+     
         if (!errors.isEmpty()) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
         }
@@ -134,34 +120,28 @@ batchSalesController.findByIdandUpdate = async (req, res) => {
 
         const findBatchSales = await batchSales.findById(req.params.id)
 
-        if (!findBatchSales) {
+        if (!findBatchSales) {  
             return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
         }
+        
 
         const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
 
         if (!findProductBatch) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
         }
-
+        console.log(findProductBatch)
         const findProduct = await Product.findById(findProductBatch.productId)
 
-        if (!findProduct || req.user._id != findProduct.userId) {
+        if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
         }
-        if (req.body.soldQuantity > findProductBatch.remainingQuantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds remaining quantity', data: null })
-        }
-        if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'all items sold', data: null })
-        }
+
 
         if (req.body.soldQuantity) findBatchSales.soldQuantity = req.body.soldQuantity;
         if (req.body.date) findBatchSales.dateOfSale = req.body.date;
 
         await findBatchSales.save()
-        findProductBatch.remainingQuantity = findProductBatch.remainingQuantity - req.body.soldQuantity
-        await findProductBatch.save()
 
         return ApiResponse(res, 200, { status: true, msg: 'udpated', data: findBatchSales });
     } catch (err) {
@@ -200,7 +180,7 @@ batchSalesController.findByIdandDelete = async (req, res) => {
 
         const findProduct = await Product.findById(findProductBatch.productId)
 
-        if (!findProduct || req.user._id != findProduct.userId) {
+        if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
         }
 

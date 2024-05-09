@@ -13,7 +13,7 @@ const batchSalesSchema = Schema({
     },
     dateOfSale: { 
         required:  true,
-        type : String
+        type : Date
     }
 })
 

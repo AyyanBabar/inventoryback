@@ -22,7 +22,7 @@ const ProductSchema = mongoose.Schema({
     },
     issueDate: {
         required: true,
-        type: String
+        type: Date
     }
 
 })

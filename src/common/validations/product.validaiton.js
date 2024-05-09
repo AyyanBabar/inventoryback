@@ -7,11 +7,10 @@ const create= [
 
     body("issueDate")
     .notEmpty().withMessage(' issueDate is required')
-    .isString().withMessage('companyName must be string'),  
+    .isDate().withMessage('companyName must be string'),  
 
-    body("companyName")
-    .notEmpty().withMessage('companyName is required')
-    .isString().withMessage('companyName must be string'),  
+    body("companyId")
+    .notEmpty().withMessage('companyId is required')
 ]
 
 

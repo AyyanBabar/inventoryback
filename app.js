@@ -1,17 +1,21 @@
 const express = require('express');
 const dotenv = require("dotenv").config()
 const connectDB = require('./src/Database/database.config')
-
+const cors = require('cors')
 
 const app = express()
+
+app.use(cors())
 
 const PORT = process.env.PORT || 8080
 
 const mainRouter = require('./src/api/v1/routes/index')
+const adminRoutes = require('./src/api/v1/routes/admin/index')
 
 app.use(express.json())
 
 app.use('/api/vi', mainRouter)
+app.use('/api/vi/admin', adminRoutes )
 
 //Database Connection
 connectDB()

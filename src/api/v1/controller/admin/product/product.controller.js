@@ -1,9 +1,9 @@
-const ApiResponse = require('../../../../Response/api.resposne')
+
+const User = require('../../../../../model/index').user
+const Product = require('../../../../../model/index').product
+const ApiResponse = require('../../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
-const { company } = require('../../../../model/index');
-const Product = require('../../../../model/index').product
-const Company = require('../../../../model/index').company
-const User = require('../../../../model/index').user
+const Company = require('../../../../../model/index').company
 
 const productController = {}
 
@@ -18,9 +18,7 @@ productController.create = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        console.log(req.body.companyId)
-        const company = await Company.findOne({ userId: req.user._id, _id: req.body.companyId})
-        console.log(req.user._id)
+        const company = await Company.findOne({ _id: req.body.companyId })
         if (!company) {
             return ApiResponse(res, 400, { status: false, msg: 'company dont exist', data: null })
 
@@ -53,7 +51,7 @@ productController.find = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        const findProduct = await Product.find({ userId: req.user._id })
+        const findProduct = await Product.find()
         if (findProduct.length <= 0) {
             return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this user', data: null })
         }
@@ -68,14 +66,15 @@ productController.find = async (req, res) => {
 
 productController.findByCompanyName = async (req, res) => {
     try {
-        console.log(req.params.companyId)
+        console.log(req.query.companyName)
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        console.log(req.user._id)
-        const findProduct = await Product.find({ userId: req.user._id, companyId: req.params.id })
+        console.log(findUser)
 
+        const findProduct = await Product.find({  companyName: req.query.companyName })
+        console.log(findProduct)
         if (findProduct <= 0) {
             return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this company', data: null })
         }
@@ -95,7 +94,7 @@ productController.findById = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        const product = await Product.findOne({ _id: req.params.id, userId: req.user._id })
+        const product = await Product.findOne({ _id: req.params.id})
         if (!product) {
             return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null });
         }
@@ -117,12 +116,12 @@ productController.findByIdandUpdate = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         if (req.body.companyName) {
-            const findCompany = await Company.findOne({ userId: req.user._id, companyName: req.body.companyName })
+            const findCompany = await Company.findOne({companyName: req.body.companyName })
             if (!findCompany) {
                 return ApiResponse(res, 400, { status: false, msg: 'compnay dont exist', data: null })
             }
         }
-        const findProduct = await Product.findOne({ _id: req.params.id, userId: req.user._id })
+        const findProduct = await Product.findOne({ _id: req.params.id })
         if (!findProduct) {
             return ApiResponse(res, 400, { status: false, msg: 'prodcut dont exist', data: null })
         }
@@ -144,12 +143,12 @@ productController.findByIdandDelete = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        const findProduct = await Product.findOne({ _id: req.params.id, userId: req.user._id })
+        const findProduct = await Product.findOne({ _id: req.params.id })
         if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null });
         } 
         await Product.deleteOne({_id: req.params.id})
-        return ApiResponse(res, 200, { status: true, msg: 'Company deleted succesfully', data: null});
+        return ApiResponse(res, 200, { status: true, msg: 'Product deleted succesfully', data: null});
     } catch (err) {
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }

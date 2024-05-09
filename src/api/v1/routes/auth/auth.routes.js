@@ -5,6 +5,6 @@ const middleware = require('../../../../middleware')
 
 router.post('/register', validation.userValidation.register, authController.register)
 router.post('/login', validation.userValidation.login, authController.login)
-router.get('/profile', middleware.isAuthencticated,  authController.profile)
+router.get('/profile', middleware.isAuthencticated, authController.profile)
 
 module.exports = router 

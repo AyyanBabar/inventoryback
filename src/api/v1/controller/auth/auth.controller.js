@@ -3,6 +3,7 @@ const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
 const jwt = require('jsonwebtoken')
 const jwtSecret = require('../../../../config/jwtConfig/jwtconfig')
+const cookies = require('cookies-parser')
 const auth = {}
 
 
@@ -34,12 +35,14 @@ auth.login = async (req, res)=>{
         }
         const findUser = await User.findOne({ email: req.body.email })
          
-        if (!findUser ||req.body.password!==findUser.password ) {
+        if (!findUser ||req.body.password!==findUser.password  ) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid credentials', data: null })
         }
+        const { password, ...rest } = findUser._doc
+
         const payload = {_id: findUser._id, name: findUser.name, role: findUser.role, isVerified:  findUser.isVerified, email: findUser.email}
         const token = jwt?.sign(payload, jwtSecret.secret, {expiresIn: jwtSecret.expiresIn} )
-        return   ApiResponse(res, 200, { status: true, msg: 'User succesfully login', data: findUser, token })
+        return   ApiResponse(res, 200, { status: true, msg: 'User succesfully login', data: rest, token })
     }catch (err) {
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }

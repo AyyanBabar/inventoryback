@@ -1,0 +1,14 @@
+{
+  "msg": {
+    "status": true,
+    "msg": "Company found",
+    "data": {
+      "_id": "662f798b6f03031f70135ea9",
+      "userId": "662f7958298e1c9b28df0822",
+      "companyName": "hassaan",
+      "companyAddress": "usa",
+      "contact": "+92555",
+      "__v": 0
+    }
+  }
+}

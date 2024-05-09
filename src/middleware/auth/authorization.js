@@ -2,6 +2,7 @@ const ApiResponse = require('../../Response/api.resposne')
 
 function isAdmin(req, res, next){
     try{
+       
         if(req.user.role == 'admin'){
             next()
         }else{

@@ -21,7 +21,7 @@ const productBatchesSchema = Schema({
     },
     dateOfProduction: { 
         required:  true,
-        type : String
+        type : Date
     }
 })
 
