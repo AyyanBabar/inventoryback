@@ -81,7 +81,7 @@ auth.login = async (req, res)=>{
             return ApiResponse(res, 400, { status: false, msg: 'Invalid credentials', data: null })
         }
         if(!findUser.isVerified){
-            return ApiResponse(res, 400, { status: false, msg: 'User not verify', data: null })
+            return ApiResponse(res, 401, { status: false, msg: 'User not verify', data: null })
         }
         const { password, ...rest } = findUser._doc
 
@@ -112,18 +112,83 @@ auth.verify = async (req, res) => {
             }
             user.isVerified = true;
             await user.save();
-            res.status(200).send('Account verified successfully now you can login on http://localhost:3000/login');
+            res.status(200).send('Account verified successfully now you can <a href="http://localhost:3000/login">login</a>.');
+
         } else {
-            res.status(400).send('Invalid verification token');
+        return ApiResponse(res, 400, { status: false, msg: 'Invalid token', data: null })
+     
         }
     } catch (error) {
         console.error('Error verifying account:', error);
-        res.status(500).send('Failed to verify account');
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
-
-
 }
 
+auth.forgetpassowrd = async (req, res)=>{
+    const { email } = req.body;
 
+    try {
+        if (!email) {
+            return ApiResponse(res, 404, { status: true, msg: 'Please provide an email', data: null })
+
+        }
+
+        const user = await User.findOne({ email: email });
+
+        if (!user) {
+            return ApiResponse(res, 404, { status: true, msg: 'User dont exist', data: null });
+        }
+
+        const token = jwt.sign({ id: user._id }, "jwt_secret_key", { expiresIn: "1d" });
+
+
+
+        const mailOptions = {
+            from: 'mnhetz999@gmail,com',
+            to: email,
+            subject: 'Reset Password Link',
+            text: `http://localhost:3000/reset-password/${user._id}/${token}`
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                return res.status(500).json({ error: 'Error sending email' });
+            } else {
+                return res.json({ status: "Success" });
+            }
+        });
+        return ApiResponse(res, 200, { status: true, msg: 'Forget password email sen succesfully', data: null })
+        
+    } catch (error) {
+        console.error(error);
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+
+    }
+}
+
+auth.resetPassword = async (req, res) => {
+    const { id, token, password } = req.params;
+    // const { password } = req.body;
+    console.log(token)
+  
+    if (!id || !token) {
+        return ApiResponse(res, 400, { status: false, msg: 'Missing ID or token' });
+    }
+
+    if (!password) {
+        return ApiResponse(res, 400, { status: false, msg: 'Password should not be empty' });
+    }
+
+    jwt.verify(token, "jwt_secret_key", (err, decoded) => {
+        if (err) {
+            return ApiResponse(res, 401, { status: false, msg: 'Invalid or expired token' });
+        } else {
+            User.findByIdAndUpdate({ _id: id }, { password: password })
+                .then(u => ApiResponse(res, 200, { status: true, msg: 'Password updated successfully' }))
+                .catch(err => ApiResponse(res, 500, { status: false, msg: 'Failed to update password', error: err }));
+        }
+    });
+};
 
 module.exports = auth
