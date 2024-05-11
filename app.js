@@ -5,7 +5,12 @@ const cors = require('cors')
 
 const app = express()
 
-app.use(cors())
+const corsOptions = {
+    origin: 'https://inventory-mangment.vercel.app/'
+  };
+  
+  app.use(cors(corsOptions));
+  
 
 const PORT = process.env.PORT || 8080
 
