@@ -147,7 +147,7 @@ auth.forgetpassowrd = async (req, res)=>{
             from: 'mnhetz999@gmail,com',
             to: email,
             subject: 'Reset Password Link',
-            text: `http://localhost:3000/reset-password/${user._id}/${token}`
+            text: `https://inventory-mangment.vercel.app/reset-password/${user._id}/${token}`
         };
 
         transporter.sendMail(mailOptions, function (error, info) {
