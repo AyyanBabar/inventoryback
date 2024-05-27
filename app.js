@@ -6,7 +6,7 @@ const cors = require('cors')
 const app = express()
 
 const corsOptions = {
-    origin: 'https://inventory-mangment.vercel.app/'
+    origin: '*'
   };
   
   app.use(cors(corsOptions));
