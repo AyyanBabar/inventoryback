@@ -6,19 +6,12 @@ const cors = require('cors')
 const app = express()
 
 const corsOptions = {
-    origin: '*'
+    origin: 'https://inventory-mangment.vercel.app/'
   };
   
   app.use(cors(corsOptions));
 
-  app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    next();
-  });
-  
-  
+
 
 const PORT = process.env.PORT || 8080
 
