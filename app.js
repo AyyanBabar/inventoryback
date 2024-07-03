@@ -17,9 +17,11 @@ const PORT = process.env.PORT || 8080
 
 const mainRouter = require('./src/api/v1/routes/index')
 const adminRoutes = require('./src/api/v1/routes/admin/index')
+const publicRoute = require("./src/api/v1/routes/public/index")
 
 app.use(express.json())
 
+app.use('/api/', publicRoute)
 app.use('/api/vi', mainRouter)
 app.use('/api/vi/admin', adminRoutes )
 

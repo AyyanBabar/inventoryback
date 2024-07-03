@@ -5,7 +5,7 @@ const Schema = mongoose.Schema
 const productBatchesSchema = Schema({
     productId : {
         type: Schema.Types.ObjectId,
-        ref: 'product'
+        ref: 'Product'
     },
     batchNumber : {
         required: true,

@@ -118,6 +118,7 @@ batchSalesController.findById = async (req, res) => {
 
 batchSalesController.findByIdandUpdate = async (req, res) => {
     try {
+        console.log(req.params)
         if (!req.user) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null })
 
@@ -133,35 +134,50 @@ batchSalesController.findByIdandUpdate = async (req, res) => {
         }
 
         const findBatchSales = await batchSales.findById(req.params.id)
+        console.log(findBatchSales)
 
         if (!findBatchSales) {
             return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
         }
 
         const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
+        console.log(findProductBatch)
 
         if (!findProductBatch) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
         }
 
         const findProduct = await Product.findById(findProductBatch.productId)
+        console.log(findProduct)
 
         if (!findProduct || req.user._id != findProduct.userId) {
             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
         }
-        if (req.body.soldQuantity > findProductBatch.remainingQuantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds remaining quantity', data: null })
+        if (req.body.soldQuantity > findProductBatch.quantity) {
+            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds product quantity', data: null })
         }
         if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'all items sold', data: null })
+            return ApiResponse(res, 400, { status: false, msg: 'All items sold', data: null })
         }
 
-        if (req.body.soldQuantity) findBatchSales.soldQuantity = req.body.soldQuantity;
-        if (req.body.date) findBatchSales.dateOfSale = req.body.date;
-
+        if (req.body.soldQuantity) 
+            {
+                findBatchSales.soldQuantity = req.body.soldQuantity;
+                findProductBatch.remainingQuantity = findProductBatch.quantity - req.body.soldQuantity
+            }
+        if(new Date(req.body.dateOfSale) < new Date(findProductBatch.dateOfProduction))
+                {
+                    return ApiResponse(res, 400, { status: false, msg: 'Date of Sale cannot be earlier than Date of Production', data: null});
+                }
+        if(new Date(req.body.dateOfSale) >= new Date(findProductBatch.dateOfProduction))
+                {
+                    findBatchSales.dateOfSale = new Date(req.body.dateOfSale);
+                }
+    
         await findBatchSales.save()
-        findProductBatch.remainingQuantity = findProductBatch.remainingQuantity - req.body.soldQuantity
         await findProductBatch.save()
+            console.log("Updated Product Batch", findProductBatch)
+            console.log("Updated Batch Batch", findBatchSales)
 
         return ApiResponse(res, 200, { status: true, msg: 'udpated', data: findBatchSales });
     } catch (err) {
@@ -204,7 +220,8 @@ batchSalesController.findByIdandDelete = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
         }
 
-
+        findProductBatch.remainingQuantity +=findBatchSales.soldQuantity
+        findProductBatch.save()
         await batchSales.deleteOne({ _id: req.params.id })
         return ApiResponse(res, 200, { status: true, msg: 'sales deleted succesfully', data: null });
 
