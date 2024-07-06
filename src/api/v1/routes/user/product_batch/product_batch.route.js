@@ -1,7 +1,7 @@
 const router = require("express").Router();
-const prodcutBatchController= require('../../controller/product_batch/product_btach.controller')
-const validation = require('../../../../common/index')
-const middleware = require('../../../../middleware')
+const prodcutBatchController= require('../../../controller/product_batch/product_btach.controller')
+const validation = require('../../../../../common/index')
+const middleware = require('../../../../../middleware')
 
 router.post('/create', validation.productBatchValdataion.create, middleware.isAuthencticated, prodcutBatchController.create)
 // router.get('/getAllCompanies', middleware.isAuthencticated, companyController.get)

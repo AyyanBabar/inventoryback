@@ -3,9 +3,13 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema
 
 const batchSalesSchema = Schema({
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
     batchId : {
         type: Schema.Types.ObjectId,
-        ref: 'productbatches'
+        ref: 'Productbatches'
     },
     soldQuantity: {
         required:  true,

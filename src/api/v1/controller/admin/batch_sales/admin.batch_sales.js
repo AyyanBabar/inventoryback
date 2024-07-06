@@ -12,6 +12,7 @@ const batchSalesController = {}
 
 batchSalesController.create = async (req, res) => {
     try {
+        console.log(req)
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
@@ -20,6 +21,7 @@ batchSalesController.create = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
+        console.log(findUser._id)
         const findProductBatch = await prodcutBatch.findById(req.body.batchId);
         if (!findProductBatch) {
             return ApiResponse(res, 404, { status: false, msg: 'product batch not found', data: null })
@@ -31,6 +33,7 @@ batchSalesController.create = async (req, res) => {
         }
 
         const newBatchSalesData = {
+            userId: findUser._id,
             batchId: req.body.batchId,
             soldQuantity:  req.body.soldQuantity,
             dateOfSale: req.body.date

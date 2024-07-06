@@ -6,11 +6,11 @@ const Schema = mongoose.Schema
 const ProductSchema = mongoose.Schema({
     userId : {
         type: Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'User'
     },
     companyId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'company'
+        ref: 'Company'
     },
     companyName: {
         required: true,

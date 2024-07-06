@@ -1,7 +1,7 @@
 const router = require("express").Router();
-const productController = require('../../controller/product/product.contoller')
-const validation = require('../../../../common/index')
-const middleware = require('../../../../middleware')
+const productController = require('../../../controller/product/product.contoller')
+const validation = require('../../../../../common/index')
+const middleware = require('../../../../../middleware')
 
 router.post('/create', validation.productValidaiton.create, middleware.isAuthencticated, productController.create);
 router.get('/find', middleware.isAuthencticated, productController.find)

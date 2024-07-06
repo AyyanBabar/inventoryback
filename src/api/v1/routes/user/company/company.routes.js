@@ -1,7 +1,7 @@
 const router = require("express").Router();
-const companyController = require('../../controller/company/company.controller')
-const validation = require('../../../../common/index')
-const middleware = require('../../../../middleware')
+const companyController = require('../../../controller/company/company.controller')
+const validation = require('../../../../../common/index')
+const middleware = require('../../../../../middleware')
 
 router.post('/create', validation.companyValidation.create, middleware.isAuthencticated, companyController.create)
 router.get('/getAllCompanies', middleware.isAuthencticated, companyController.get)

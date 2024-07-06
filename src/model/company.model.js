@@ -5,7 +5,7 @@ const Schema = mongoose.Schema
 const CompanySchema = mongoose.Schema({
     userId : {
         type: Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'User'
     },
     companyName: {
         required: true,
