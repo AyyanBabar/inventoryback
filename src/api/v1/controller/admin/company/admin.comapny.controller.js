@@ -43,9 +43,7 @@ adminComapnyController.get = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         const findCompanies = await Company.find()
-        if (!findCompanies) {
-            return ApiResponse(res, 404, { status: false, msg: 'No company is associated with this user', data: null })
-        }
+
         return ApiResponse(res, 200, { status: true, msg: 'Companies', data: findCompanies })
 
     } catch (err) {
