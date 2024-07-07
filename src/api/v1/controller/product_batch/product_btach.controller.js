@@ -86,9 +86,6 @@ prodcutBatchController.find = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         const productBatches= await prodcutBatch.find();
-        if (productBatches.length <= 0) {
-            return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this user', data: null })
-        }
         return ApiResponse(res, 200, { status: true, msg: 'Product BAtch retrieved successfully', data: productBatches });
     } catch (err) {
         console.log(err)
