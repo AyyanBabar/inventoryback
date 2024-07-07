@@ -57,10 +57,6 @@ batchSalesController.find = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         const findProductBatch = await batchSales.find()
-        if (findProductBatch.length <= 0) {
-            return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this user', data: null })
-        }
-
         return ApiResponse(res, 200, { status: true, msg: 'Product', data: findProductBatch })
     } catch (err) {
 
