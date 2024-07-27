@@ -1,7 +1,7 @@
 const prodcutBatch = require('../../../../../model/product_batches.model')
 const User = require('../../../../../model/index').user
 const batchSales = require('../../../../../model/index').batchSales
-
+const Employee = require('../../../../../model/employee.model')
 const Product = require('../../../../../model/index').product
 const { ObjectId, MongoGridFSChunkError } = require('mongodb');
 const mongoose = require('mongoose')
@@ -12,10 +12,10 @@ const batchSalesController = {}
 
 batchSalesController.create = async (req, res) => {
     try {
-        console.log(req)
+        // console.log(req)
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid input', data: errors.array() })
         }
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
@@ -30,6 +30,23 @@ batchSalesController.create = async (req, res) => {
 
         if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'product not user found', data: null })
+        }
+        if(req.user.role == 'employee'){
+            const company = await Employee.findOne({userId: req.user._id})
+            if (!company) {
+                return ApiResponse(res, 404, { status: false, msg: 'No company associated', data: null })
+            };
+            if(findProduct.companyId.toString() == company.companyId)
+            {
+                console.log("Company Id found")
+            }
+            if(findProduct.companyId.toString() != company.companyId)
+            {
+                return ApiResponse(res, 404, { status: false, msg: 'This Batch ID is not associated with your Product Batch', data: null })
+            }
+        }
+        if(req.body.soldQuantity > findProductBatch.remainingQuantity ) {
+            return ApiResponse(res, 404, { status: false, msg: 'Not enough remaining products available for this sale', data: null })
         }
 
         const newBatchSalesData = {
@@ -103,13 +120,13 @@ batchSalesController.findById = async (req, res) => {
 batchSalesController.findByIdandUpdate = async (req, res) => {
     try {
         if(!req.user) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid user', data: null })
 
         }
         const errors = validationResult(req)
      
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid input', data: errors.array() })
         }
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
@@ -135,11 +152,11 @@ batchSalesController.findByIdandUpdate = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'product not found', data: null })
         }
         if (req.body.soldQuantity > findProductBatch.quantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds Quantity', data: null })
+            return ApiResponse(res, 404, { status: false, msg: 'Sold quantity exceeds Quantity', data: null })
         }
-        if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'All items sold', data: null })
-        }
+        // if(findProductBatch.remainingQuantity==0){
+        //     return ApiResponse(res, 404, { status: false, msg: 'All items sold', data: null })
+        // }
 
         if (req.body.soldQuantity) 
             {

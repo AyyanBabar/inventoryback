@@ -17,7 +17,7 @@ const  UserSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum : [role.user, role.admin, role.vendor],
+        enum : [role.user, role.admin, role.vendor, role.employee],
         default: role.user
     },
     isVerified: {
@@ -34,4 +34,4 @@ const  UserSchema = mongoose.Schema({
 })  
 
 const  User = mongoose.model('User', UserSchema)
-module.exports = User
+module.exports = User 

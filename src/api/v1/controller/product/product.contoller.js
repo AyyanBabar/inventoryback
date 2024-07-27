@@ -1,8 +1,7 @@
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
-const { company } = require('../../../../model/index');
 const Product = require('../../../../model/index').product
-const Company = require('../../../../model/index').company
+const Company = require('../../../../model/company.model')
 const User = require('../../../../model/index').user
 
 const productController = {}
@@ -18,7 +17,7 @@ productController.create = async (req, res) => {
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
-        console.log(req.body.companyId)
+        console.log(req.body)
         const company = await Company.findOne({ userId: req.user._id, _id: req.body.companyId})
         console.log(req.user._id)
         if (!company) {
@@ -74,7 +73,7 @@ productController.findByCompanyName = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         console.log(req.user._id)
-        const findProduct = await Product.find({ userId: req.user._id, companyId: req.params.id })
+        const findProduct = await Product.find({companyId: req.params.id })
 
         if (findProduct <= 0) {
             return ApiResponse(res, 404, { status: false, msg: 'No product is associated with this company', data: null })

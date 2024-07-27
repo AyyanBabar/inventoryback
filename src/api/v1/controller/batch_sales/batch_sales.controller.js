@@ -66,14 +66,14 @@ batchSalesController.findByBatchId = async (req, res) => {
         }
 
         // Filter batches for authorized products
-        const authorizedBatches = findBatchesSales.filter(batch => batch.userId===req.params._id);
+        // const authorizedBatches = findBatchesSales.filter(batch => batch.userId===req.params._id);
 
-        // If no authorized batches found, return error
-        if (authorizedBatches.length === 0) {
-            return ApiResponse(res, 404, { status: false, msg: 'No authorized batches found', data: null });
-        }
+        // // If no authorized batches found, return error
+        // if (authorizedBatches.length === 0) {
+        //     return ApiResponse(res, 404, { status: false, msg: 'No authorized batches found', data: null });
+        // }
 
-        return ApiResponse(res, 200, { status: true, msg: 'Batches found', data: authorizedBatches });
+        return ApiResponse(res, 200, { status: true, msg: 'Batches found', data: findBatchesSales });
 
     } catch (err) {
         console.error(err);

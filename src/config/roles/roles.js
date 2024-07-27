@@ -1,5 +1,6 @@
 module.exports = {
     user: 'user',
     admin: 'admin',
-    vendor: 'vendor'
+    vendor: 'vendor',
+    employee: 'employee'
 }

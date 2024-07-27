@@ -94,7 +94,7 @@ prodcutBatchController.findByIdandUpdate = async (req, res) => {
 
        
         if (req.body.quantity) findProductBatch.quantity = req.body.quantity;
-        if (req.body.data) findProductBatch.data = req.body.data;
+        // if (req.body.data) findProductBatch.data = req.body.data;
 
         await findProductBatch.save()
 

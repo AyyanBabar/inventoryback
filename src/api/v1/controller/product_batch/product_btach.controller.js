@@ -5,6 +5,7 @@ const { ObjectId, MongoGridFSChunkError } = require('mongodb');
 const mongoose = require('mongoose')
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
+const Employee = require('../../../../model/employee.model')
 
 const prodcutBatchController = {}
 
@@ -45,7 +46,7 @@ prodcutBatchController.create = async (req, res) => {
     try {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid input', data: errors.array() })
         }
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
@@ -55,6 +56,22 @@ prodcutBatchController.create = async (req, res) => {
         
         if (!findProduct) {
             return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null })
+        }
+        if(req.user.role == 'employee'){
+            const company = await Employee.findOne({userId: req.user._id})
+            if (!company) {
+                return ApiResponse(res, 404, { status: false, msg: 'No company associated', data: null })
+            };
+            console.log(findProduct)
+            console.log(company)
+            if(findProduct.companyId.toString() == company.companyId)
+            {
+                console.log("Company Id found")
+            }
+            if(findProduct.companyId.toString() != company.companyId)
+            {
+                return ApiResponse(res, 404, { status: false, msg: 'This product is not associated with your company', data: null })
+            }
         }
         const findBatchNumbers = await prodcutBatch.find({ productId: req.body.productId }).sort({ batchNumber: -1 }).limit(1);
         let batchNumber = 1;
@@ -86,7 +103,7 @@ prodcutBatchController.find = async (req, res) => {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
         }
         const productBatches= await prodcutBatch.find();
-        return ApiResponse(res, 200, { status: true, msg: 'Product BAtch retrieved successfully', data: productBatches });
+        return ApiResponse(res, 200, { status: true, msg: 'Product Batch retrieved successfully', data: productBatches });
     } catch (err) {
         console.log(err)
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
@@ -213,9 +230,9 @@ prodcutBatchController.findByIdandUpdate = async (req, res) => {
 
         if (req.body.quantity){
             findProductBatch.quantity = req.body.quantity;
-            findProductBatch.remainingQuantity = req.body.quantity
+            // findProductBatch.remainingQuantity = req.body.quantity
         }
-        if (req.body.data) findProductBatch.data = req.body.data;
+        // if (req.body.data) findProductBatch.data = req.body.data;
 
         await findProductBatch.save()
 

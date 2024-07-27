@@ -1,3 +1,4 @@
+const Company = require('../../../../../model/company.model')
 const prodcutBatch = require('../../../../../model/product_batches.model')
 const User = require('../../../../../model/index').user
 const batchSales = require('../../../../../model/index').batchSales
@@ -37,7 +38,8 @@ adminController.create = async (req, res) => {
 
 adminController.find = async (req, res) => {
     try {
-
+        // console.log(req)
+        // console.log(req.body)
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
@@ -74,6 +76,38 @@ adminController.delete = async (req, res) => {
         console.log(err)
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
     }
+}
+adminController.getallusers = async (req, res) => {
+    try {
+        const findUser = await User.findById(req.user._id)
+        if (!findUser) {
+            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
+        }
+        const users = await User.find({role: 'user'}, '_id name');
+
+        return ApiResponse(res, 200, { status: true, msg: 'Users retrieved successfully', data: users });
+    } catch (err) {
+        console.log(err)
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+
+    }
+
+}
+adminController.getallcompanies = async (req, res) => {
+    try {
+        const findUser = await User.findById(req.user._id)
+        if (!findUser) {
+            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
+        }
+        const companies = await Company.find({}, '_id companyName');
+
+        return ApiResponse(res, 200, { status: true, msg: 'Companies retrieved successfully', data: companies });
+    } catch (err) {
+        console.log(err)
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+
+    }
+
 }
 
 

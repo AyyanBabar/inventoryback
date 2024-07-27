@@ -12,7 +12,7 @@ productController.create = async (req, res) => {
     try {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid input', data: errors.array() })
         }
         const findUser = await User.findById(req.user._id)
         if (!findUser) {
@@ -20,12 +20,12 @@ productController.create = async (req, res) => {
         }
         const company = await Company.findOne({ _id: req.body.companyId })
         if (!company) {
-            return ApiResponse(res, 400, { status: false, msg: 'company dont exist', data: null })
+            return ApiResponse(res, 404, { status: false, msg: 'company dont exist', data: null })
 
         }
         const existingProduct = await Product?.findOne({ companyId: company._id, productName: req.body.productName })
         if (existingProduct) {
-            return ApiResponse(res, 400, { status: false, msg: ' product already exist', data: null })
+            return ApiResponse(res, 404, { status: false, msg: ' product already exist', data: null })
         }
         const newProductData = {
             userId: req.user._id,
