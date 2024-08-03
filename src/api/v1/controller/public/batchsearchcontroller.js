@@ -1,9 +1,6 @@
-const { default: mongoose } = require('mongoose');
-const Product = require('../../../../model/product.model');
-const ProductBatches = require('../../../../model/product_batches.model')
-// const Product = require('../../../../model/index').product
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
+const db = require('../../../../Database/database.config')
 
 const batchSearchController = {}
 
@@ -16,15 +13,17 @@ batchSearchController.find = async (req, res) =>{
         // console.log(req.body)
         const {id} = req.params;
         console.log(id)
-        console.log("API HIT")
-        // if(!mongoose.Types.ObjectId.isValid(id)){
-        //     console.log("Invalid ID")
-        // }
-        const productBatch = await ProductBatches.findById(id).populate('productId');
-        if (!productBatch) {
-            return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null })
-        }
-        return ApiResponse(res, 200, { status: true, msg: 'Product Found', data: productBatch });
+        db.query("select b.productId, p.productName, b.remainingQuantity, b.productionDate from product_batch as b inner join product as p on b.productId = p.productId where b.productBatchId = ?", [id], (err, batchFound)=>{
+            if (err) {
+                console.error('Database query error:', err);
+                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+            }
+            if(batchFound.length === 0){
+                return ApiResponse(res, 404, { status: false, msg: 'No Product Batch exist', data: batchFound });
+            }
+            return ApiResponse(res, 200, { status: true, msg: 'Product Batch Found', data: batchFound });
+        });
+       
     }
     catch (err) {
         console.log(err)

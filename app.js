@@ -1,18 +1,13 @@
 const express = require('express');
 const dotenv = require("dotenv").config()
-const connectDB = require('./src/Database/database.config')
+require('./src/Database/database.config')
 const cors = require('cors')
-
 const app = express()
-
 const corsOptions = {
     origin: '*'
   };
-  
-  app.use(cors(corsOptions));
 
-
-
+app.use(cors(corsOptions));
 const PORT = process.env.PORT || 8080
 
 const mainRouter = require('./src/api/v1/routes/user/index')
@@ -30,9 +25,6 @@ app.use('/api/vi/vendor', vendorRoute )
 app.use('/api/vi', employee)
 
 
-//Database Connection
-connectDB()
-
 //commitda
 app.get('/', (req,res)=>{res.send('succesful git')})
-app.listen(PORT, ()=>{console.log('port is listening on port', PORT)})
+app.listen(PORT, ()=>{console.log('Server is listening on port', PORT)})

@@ -6,7 +6,7 @@ const middleware = require('../../../../middleware')
 router.post('/register', validation.userValidation.register, authController.register)
 router.post('/login', validation.userValidation.login, authController.login)
 router.get('/verify',  authController.verify)
-router.post('/forget-password', authController.forgetpassowrd)
+router.post('/forget-password', authController.forgetpassword)
 router.get('/reset-password/:id/:token/:password', authController.resetPassword)
 
 module.exports = router 

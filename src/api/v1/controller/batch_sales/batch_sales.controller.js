@@ -1,234 +1,315 @@
-const prodcutBatch = require('../../../../model/product_batches.model')
-const User = require('../../../../model/index').user
-const batchSales = require('../../../../model/index').batchSales
-
-const Product = require('../../../../model/index').product
-const { ObjectId, MongoGridFSChunkError } = require('mongodb');
-const mongoose = require('mongoose')
 const ApiResponse = require('../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
+const db = require('../../../../Database/database.config')
 
 const batchSalesController = {}
 
 batchSalesController.create = async (req, res) => {
     try {
-        const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
-        }
-        const findUser = await User.findById(req.user._id)
-        if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
-        }
-        const findProductBatch = await prodcutBatch.findById(req.body.batchId);
-        if (!findProductBatch) {
-            return ApiResponse(res, 404, { status: false, msg: 'product batch not found', data: null })
-        }
-        const findProduct = await Product.findById(findProductBatch.productId)
-
-        if (!findProduct || findProduct.userId != req.user._id) {
-            return ApiResponse(res, 404, { status: false, msg: 'product not user found', data: null })
-        }
-        if (req.body.soldQuantity > findProductBatch.remainingQuantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds remaining quantity', data: null })
-        }
-        if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'all items sold', data: null })
-        }
-        const newBatchSalesData = {
-            batchId: req.body.batchId,
-            soldQuantity:  req.body.soldQuantity,
-            dateOfSale: req.body.date
-        }
-        const newBatchSale = await batchSales.create(newBatchSalesData)
-        findProductBatch.remainingQuantity = findProductBatch.remainingQuantity - req.body.soldQuantity
-        await findProductBatch.save()
-        return ApiResponse(res, 200, { status: true, msg: 'Batch cretad succesfully', data: newBatchSale })
-
+        const findUserQuery = "SELECT * FROM users WHERE userId = ?";
+        db.query(findUserQuery, [req.user.userId], (err, findUser) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+            }
+            if (findUser.length === 0) {
+                return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null });
+            }
+            const userId = findUser[0].userId;
+            // Check if the product batch exists
+            const findProductBatchQuery = "SELECT * FROM product_batch WHERE productBatchId = ?";
+            db.query(findProductBatchQuery, [req.body.productBatchId], (err, findProductBatch) => {
+                if (err) {
+                    console.error('Database query error:', err);
+                    return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                }
+                if (findProductBatch.length === 0) {
+                    return ApiResponse(res, 404, { status: false, msg: 'Product Batch not found', data: null });
+                }
+                const productBatchId = findProductBatch[0].productBatchId;
+                // Check if the product exists
+                const findProductQuery = "SELECT * FROM product WHERE productId = ?";
+                db.query(findProductQuery, [findProductBatch[0].productId], (err, findProduct) => {
+                    if (err) {
+                        console.error('Database query error:', err);
+                        return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                    }
+                    if (findProduct.length === 0) {
+                        return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null });
+                    }
+                    // Check if the sold quantity is more than the remaining quantity
+                    if (parseInt(req.body.soldQuantity) > findProductBatch[0].remainingQuantity) {
+                        return ApiResponse(res, 404, { status: false, msg: 'Not enough remaining products available for this sale', data: null });
+                    }
+                    const dateOfSale = new Date(req.body.dateOfSale);
+                    const dateOfProduction = new Date(findProductBatch[0].productionDate);
+                    if (dateOfSale < dateOfProduction) {
+                        return ApiResponse(res, 404, { status: false, msg: 'Date of Sale cannot be earlier than Date of Production', data: null });                                    }
+                    // Insert new batch sale data
+                    const newBatchSalesQuery = `
+                        INSERT INTO batch_sale(soldQuantity, dateOfSale, productBatchId, userId)
+                        VALUES (?, ?, ?, ?)
+                    `;
+                    db.query(newBatchSalesQuery, [req.body.soldQuantity, req.body.dateOfSale, productBatchId, req.user.userId], (err, newBatchSale) => {
+                        if (err) {
+                            console.error('Database query error:', err);
+                            return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                        }
+                        // Update the remaining quantity in the product batch
+                        const updateRemainingQuantityQuery = `
+                            UPDATE product_batch
+                            SET remainingQuantity = remainingQuantity - ?
+                            WHERE productBatchId = ?
+                        `;
+                        db.query(updateRemainingQuantityQuery, [req.body.soldQuantity, productBatchId], (err, result) => {
+                            if (err) {
+                                console.error('Database query error:', err);
+                                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                            }
+                            return ApiResponse(res, 200, { status: true, msg: 'Batch created successfully', data: newBatchSale });
+                        });
+                    });
+                });
+            });
+        });
     } catch (err) {
-        console.log(err)
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
-
+        console.error('Server error:', err);
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
     }
 }
 batchSalesController.findByBatchId = async (req, res) => {
     try {
-        // Ensure user exists
-        const findUser = await User.findById(req.user._id);
-        if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null });
-        }
-        
-        const findBatchesSales = await batchSales.find({ batchId: req.params.id });
+        db.query("select * from batch_sale where productBatchId = ?",[req.params.id], (err, batches)=>{
+            if (err) {
+                console.error('Database query error:', err);
+                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+            }
+            if(batches.length === 0){
+                return ApiResponse(res, 404, { status: false, msg: 'No Batch Sale is associated with this batch', data: batches });
+            }
+                return ApiResponse(res, 200, { status: true, msg: 'Batches Retrived', data: batches });
+                
 
-        if (findBatchesSales.length === 0) {    
-            return ApiResponse(res, 404, { status: false, msg: 'Product batches not found', data: null });
-        }
-
-        // Filter batches for authorized products
-        // const authorizedBatches = findBatchesSales.filter(batch => batch.userId===req.params._id);
-
-        // // If no authorized batches found, return error
-        // if (authorizedBatches.length === 0) {
-        //     return ApiResponse(res, 404, { status: false, msg: 'No authorized batches found', data: null });
-        // }
-
-        return ApiResponse(res, 200, { status: true, msg: 'Batches found', data: findBatchesSales });
+        });
 
     } catch (err) {
         console.error(err);
         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
     }
 }
+// batchSalesController.findById = async (req, res) => {
+//     try {
+//         const findUser = await User.findById(req.user._id)
+//         if (!findUser) {
+//             return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
+//         }
+//         const findBatchSales = await batchSales.findById(req.params.id)
 
-batchSalesController.findById = async (req, res) => {
-    try {
-        const findUser = await User.findById(req.user._id)
-        if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
-        }
-        const findBatchSales = await batchSales.findById(req.params.id)
+//         if (!findBatchSales) {
+//             return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
+//         }
 
-        if (!findBatchSales) {
-            return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
-        }
+//         const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
 
-        const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
+//         if (!findProductBatch) {
+//             return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
+//         }
 
-        if (!findProductBatch) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
-        }
+//         const findProduct = await Product.findById(findProductBatch.productId)
 
-        const findProduct = await Product.findById(findProductBatch.productId)
-
-        if (!findProduct || req.user._id != findProduct.userId) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
-        }
+//         if (!findProduct || req.user._id != findProduct.userId) {
+//             return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
+//         }
 
 
-        return ApiResponse(res, 200, { status: true, msg: 'sales Batch found', data: findBatchSales })
+//         return ApiResponse(res, 200, { status: true, msg: 'sales Batch found', data: findBatchSales })
 
-    } catch (err) {
-        console.log(err)
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+//     } catch (err) {
+//         console.log(err)
+//         return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
 
-    }
+//     }
 
-}
-
+// }
 batchSalesController.findByIdandUpdate = async (req, res) => {
     try {
-        console.log(req.params)
+        // Check if the user exists
         if (!req.user) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null })
-
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid user', data: null });
         }
-        const errors = validationResult(req)
-        console.log(req.body)
+        // Validate the request body
+        const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 404, { status: false, msg: 'Invalid input', data: errors.array() });
         }
-        const findUser = await User.findById(req.user._id)
-        if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
-        }
-
-        const findBatchSales = await batchSales.findById(req.params.id)
-        console.log(findBatchSales)
-
-        if (!findBatchSales) {
-            return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
-        }
-
-        const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
-        console.log(findProductBatch)
-
-        if (!findProductBatch) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
-        }
-
-        const findProduct = await Product.findById(findProductBatch.productId)
-        console.log(findProduct)
-
-        if (!findProduct || req.user._id != findProduct.userId) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
-        }
-        if (req.body.soldQuantity > findProductBatch.quantity) {
-            return ApiResponse(res, 400, { status: false, msg: 'Sold quantity exceeds product quantity', data: null })
-        }
-        if(findProductBatch.remainingQuantity==0){
-            return ApiResponse(res, 400, { status: false, msg: 'All items sold', data: null })
-        }
-
-        if (req.body.soldQuantity) 
-            {
-                findBatchSales.soldQuantity = req.body.soldQuantity;
-                findProductBatch.remainingQuantity = findProductBatch.quantity - req.body.soldQuantity
+        // Find the user
+        const findUserQuery = "SELECT * FROM users WHERE userId = ?";
+        db.query(findUserQuery, [req.user.userId], (err, findUser) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
             }
-        if(new Date(req.body.dateOfSale) < new Date(findProductBatch.dateOfProduction))
-                {
-                    return ApiResponse(res, 400, { status: false, msg: 'Date of Sale cannot be earlier than Date of Production', data: null});
+            if (findUser.length === 0) {
+                return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null });
+            }
+            // Find the specific batch sale by ID
+            const findBatchSalesQuery = "SELECT * FROM batch_sale WHERE batchSaleId = ?";
+            db.query(findBatchSalesQuery, [req.params.id], (err, findBatchSales) => {
+                if (err) {
+                    console.error('Database query error:', err);
+                    return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
                 }
-        if(new Date(req.body.dateOfSale) >= new Date(findProductBatch.dateOfProduction))
-                {
-                    findBatchSales.dateOfSale = new Date(req.body.dateOfSale);
+                if (findBatchSales.length === 0) {
+                    return ApiResponse(res, 404, { status: false, msg: 'Batch Sale not found', data: null });
                 }
-    
-        await findBatchSales.save()
-        await findProductBatch.save()
-            console.log("Updated Product Batch", findProductBatch)
-            console.log("Updated Batch Batch", findBatchSales)
+                // Find the related product batch
+                const findProductBatchQuery = "SELECT * FROM product_batch WHERE productBatchId = ?";
+                db.query(findProductBatchQuery, [findBatchSales[0].productBatchId], (err, findProductBatch) => {
+                    if (err) {
+                        console.error('Database query error:', err);
+                        return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                    }
+                    if (findProductBatch.length === 0) {
+                        return ApiResponse(res, 404, { status: false, msg: 'Product Batch not found', data: null });
+                    }
+                    // Find the product related to the product batch
+                    const findProductQuery = "SELECT * FROM product WHERE productId = ?";
+                    db.query(findProductQuery, [findProductBatch[0].productId], (err, findProduct) => {
+                        if (err) {
+                            console.error('Database query error:', err);
+                            return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                        }
+                        if (findProduct.length === 0) {
+                            return ApiResponse(res, 404, { status: false, msg: 'Product not found', data: null });
+                        }
+                        db.query("select sum(soldQuantity) as totalSold from batch_sale where productBatchId = ?", [findProductBatch[0].productBatchId], (error, data)=>{
+                            if(error){
+                                console.log("Error in query")
+                                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                            }
+                            if(data){
+                                const updatedQuantity = (data[0].totalSold - findBatchSales[0].soldQuantity) + parseInt(req.body.soldQuantity)
+                                // console.log(updatedQuantity);
+                                if(updatedQuantity>findProductBatch[0].quantity)
+                                {
+                                    return ApiResponse(res, 404, { status: false, msg: 'Sold Quanity Exceeds Remaining Quantity', data: null });
+                                }
+                                else if(updatedQuantity <= findProductBatch[0].quantity){
+                                    const updatedRemainingQuantity = findProductBatch[0].quantity - updatedQuantity
+                                    // console.log(updatedRemainingQuantity);
+                                    const dateOfSale = new Date(req.body.dateOfSale);
+                                    const dateOfProduction = new Date(findProductBatch[0].productionDate);
+                                    if (dateOfSale < dateOfProduction) {
+                                        return ApiResponse(res, 400, { status: false, msg: 'Date of Sale cannot be earlier than Date of Production', data: null });
+                                    }
+                                    const updateBatchSaleQuery = `
+                            UPDATE batch_sale
+                            SET soldQuantity = ?, dateOfSale = ?
+                            WHERE batchSaleId = ?
+                        `;
+                        db.query(updateBatchSaleQuery, [req.body.soldQuantity, req.body.dateOfSale, req.params.id], (err) => {
+                            if (err) {
+                                console.error('Database query error:', err);
+                                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                            }
+                            const updateProductBatchQuery = `
+                                UPDATE product_batch
+                                SET remainingQuantity = ?
+                                WHERE productBatchId = ?
+                            `;
+                            db.query(updateProductBatchQuery, [updatedRemainingQuantity, findProductBatch[0].productBatchId], (err) => {
+                                if (err) {
+                                    console.error('Database query error:', err);
+                                    return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                                }
+                                // Respond with the updated batch sale details
+                                return ApiResponse(res, 200, { status: true, msg: 'Updated successfully', data: findBatchSales[0] });
+                            });
+                        });
+                                }
 
-        return ApiResponse(res, 200, { status: true, msg: 'udpated', data: findBatchSales });
+                            }
+                        });
+                    });
+                });
+            });
+        });
     } catch (err) {
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+        console.error('Server error:', err);
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
     }
 }
-
-
 batchSalesController.findByIdandDelete = async (req, res) => {
     try {
+        // Check if the user is valid
         if (!req.user) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null })
-
+            return ApiResponse(res, 400, { status: false, msg: 'Invalid user', data: null });
         }
-        const errors = validationResult(req)
-        console.log(req.body)
+        // Validate the request body
+        const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() })
+            return ApiResponse(res, 400, { status: false, msg: 'Invalid input', data: errors.array() });
         }
-        const findUser = await User.findById(req.user._id)
-        if (!findUser) {
-            return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null })
-        }
-
-        const findBatchSales = await batchSales.findById(req.params.id)
-
-        if (!findBatchSales) {
-            return ApiResponse(res, 404, { status: false, msg: 'BatchsaleNotfound', data: null })
-        }
-
-        const findProductBatch = await prodcutBatch.findById(findBatchSales.batchId)
-
-        if (!findProductBatch) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatchNotfound', data: null })
-        }
-
-        const findProduct = await Product.findById(findProductBatch.productId)
-
-        if (!findProduct || req.user._id != findProduct.userId) {
-            return ApiResponse(res, 404, { status: false, msg: 'productBatch  found', data: null })
-        }
-
-        findProductBatch.remainingQuantity +=findBatchSales.soldQuantity
-        findProductBatch.save()
-        await batchSales.deleteOne({ _id: req.params.id })
-        return ApiResponse(res, 200, { status: true, msg: 'sales deleted succesfully', data: null });
-
+        // Find the user
+        const findUserQuery = "SELECT * FROM users WHERE userId = ?";
+        db.query(findUserQuery, [req.user.userId], (err, findUser) => {
+            if (err) {
+                console.error('Database query error:', err);
+                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+            }
+            if (findUser.length === 0) {
+                return ApiResponse(res, 404, { status: false, msg: 'User not found', data: null });
+            }
+            // Find the specific batch sale by ID
+            const findBatchSalesQuery = "SELECT * FROM batch_sale WHERE batchSaleId = ?";
+            db.query(findBatchSalesQuery, [req.params.id], (err, findBatchSales) => {
+                if (err) {
+                    console.error('Database query error:', err);
+                    return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                }
+                if (findBatchSales.length === 0) {
+                    return ApiResponse(res, 404, { status: false, msg: 'Batch Sale not found', data: null });
+                }
+                // Find the related product batch
+                const findProductBatchQuery = "SELECT * FROM product_batch WHERE productBatchId = ?";
+                db.query(findProductBatchQuery, [findBatchSales[0].productBatchId], (err, findProductBatch) => {
+                    if (err) {
+                        console.error('Database query error:', err);
+                        return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                    }
+                    if (findProductBatch.length === 0) {
+                        return ApiResponse(res, 404, { status: false, msg: 'Product Batch not found', data: null });
+                    }
+                    // Update the remaining quantity in the product batch
+                    const updatedRemainingQuantity = findProductBatch[0].remainingQuantity + findBatchSales[0].soldQuantity;
+                    const updateProductBatchQuery = `
+                        UPDATE product_batch
+                        SET remainingQuantity = ?
+                        WHERE productBatchId = ?
+                    `;
+                    db.query(updateProductBatchQuery, [updatedRemainingQuantity, findBatchSales[0].productBatchId], (err) => {
+                        if (err) {
+                            console.error('Database query error:', err);
+                            return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                        }
+                        // Delete the batch sale
+                        const deleteBatchSalesQuery = "DELETE FROM batch_sale WHERE batchSaleId = ?";
+                        db.query(deleteBatchSalesQuery, [req.params.id], (err) => {
+                            if (err) {
+                                console.error('Database query error:', err);
+                                return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
+                            }
+                            // Respond with success
+                            return ApiResponse(res, 200, { status: true, msg: 'Batch Sales deleted successfully', data: null });
+                        });
+                    });
+                });
+            });
+        });
     } catch (err) {
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message })
+        console.error('Server error:', err);
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
     }
 }
-
 
 module.exports = batchSalesController
