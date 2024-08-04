@@ -81,6 +81,7 @@ auth.register = async (req, res) => {
 };
 auth.login = async (req, res) => {
     try {
+        console.log("Login API Hit")
         // Validate the request
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -100,6 +101,7 @@ auth.login = async (req, res) => {
             }
 
             const findUser = result[0];
+            console.log(findUser)
 
             // Check if password matches
             if (password !== findUser.password) {
