@@ -228,7 +228,7 @@ productController.findByIdandUpdate = (req, res) => {
                 return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: error });
             }
             if(!error){
-                return ApiResponse(res, 200, { status: true, msg: 'Product updated successfully', data: data });
+                return ApiResponse(res, 200, { status: true, msg: 'Product updated successfully', data: null });
             }
         });
     });
@@ -268,7 +268,7 @@ productController.findByIdandDelete = async (req, res) => {
         });
     } catch (err) {
         console.error('Internal Server Error:', err);
-        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: err.message });
+        return ApiResponse(res, 500, { status: false, msg: 'Internal Server error', data: null });
     }
 };
 

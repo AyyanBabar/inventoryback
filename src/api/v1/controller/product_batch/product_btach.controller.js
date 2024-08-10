@@ -57,7 +57,7 @@ prodcutBatchController.create = async (req, res) => {
                             console.error('Database query error:', err);
                             return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
                         }
-                        return ApiResponse(res, 200, { status: true, msg: 'Batch created successfully', data: result });
+                        return ApiResponse(res, 200, { status: true, msg: 'Batch created successfully', data: null });
                     });
                 });
             });

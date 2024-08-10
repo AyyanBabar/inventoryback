@@ -42,7 +42,7 @@ adminController.create = async (req, res) => {
                         return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: error });
                     }
 
-                    return ApiResponse(res, 200, { status: true, msg: 'User created successfully', data: { id: newUserResult.insertId, ...req.body } });
+                    return ApiResponse(res, 200, { status: true, msg: 'User created successfully', data: null});
                 });
             });
         });
@@ -52,7 +52,7 @@ adminController.create = async (req, res) => {
     }
 };
 adminController.find = async (req, res) => {
-    console.log(req.user)
+    console.log(req)
     try {
         db.query("SELECT * FROM users WHERE email = ?", [req.user.email], (error, findUserResult) => {
             if (error) {

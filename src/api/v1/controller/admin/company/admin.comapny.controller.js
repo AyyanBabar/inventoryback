@@ -38,7 +38,7 @@ adminComapnyController.create = async (req, res) => {
                         return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: error });
                     }
 
-                    return ApiResponse(res, 200, { status: true, msg: 'Company created successfully', data: { id: newCompanyResult.insertId, ...req.body } });
+                    return ApiResponse(res, 200, { status: true, msg: 'Company created successfully', data: null });
                 });
             });
         });
@@ -172,7 +172,7 @@ adminComapnyController.findByIdandDelete = async (req, res) => {
                         return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: error });
                     }
 
-                    return ApiResponse(res, 200, { status: true, msg: 'Company deleted successfully', data: deleteResult });
+                    return ApiResponse(res, 200, { status: true, msg: 'Company deleted successfully', data: null });
                 });
             });
         });

@@ -1,10 +1,3 @@
-// const prodcutBatch = require('../../../../../model/product_batches.model')
-// const User = require('../../../../../model/index').user
-// const batchSales = require('../../../../../model/index').batchSales
-// const Employee = require('../../../../../model/employee.model')
-// const Product = require('../../../../../model/index').product
-// const { ObjectId, MongoGridFSChunkError } = require('mongodb');
-// const mongoose = require('mongoose')
 const db = require('../../../../../Database/database.config')
 const ApiResponse = require('../../../../../Response/api.resposne')
 const { validationResult } = require("express-validator");
@@ -258,7 +251,7 @@ batchSalesController.findByIdandUpdate = async (req, res) => {
                                     return ApiResponse(res, 500, { status: false, msg: 'Database query error', data: err });
                                 }
                                 // Respond with the updated batch sale details
-                                return ApiResponse(res, 200, { status: true, msg: 'Updated successfully', data: findBatchSales[0] });
+                                return ApiResponse(res, 200, { status: true, msg: 'Updated successfully', data: null });
                             });
                         });
                                 }
